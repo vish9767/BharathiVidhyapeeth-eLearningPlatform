@@ -154,8 +154,9 @@ EMAIL_HOST_USER = 'fastapipython3@gmail.com'
 EMAIL_HOST_PASSWORD = 'bbmc kxfg bihs qkvc'
 
 DEFAULT_FROM_EMAIL = 'E-Learning App <fastapipython3@gmail.com>'
+# AUTH_USER_MODEL = 'elearning.User'
 
-
+AUTH_USER_MODEL = 'elearning.User'
 
 
 

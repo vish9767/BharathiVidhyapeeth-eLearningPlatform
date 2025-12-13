@@ -36,6 +36,17 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+# SWAGGER_SETTINGS = {
+#     'SECURITY_DEFINITIONS': {
+#         'Bearer': {
+#             'type': 'apiKey',
+#             'name': 'Authorization',
+#             'in': 'header',
+#             'description': "JWT Authorization header using the Bearer scheme. Example: 'Bearer <access_token>'"
+#         }
+#     }
+# }
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('elearning.urls')),

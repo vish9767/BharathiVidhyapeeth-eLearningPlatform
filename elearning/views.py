@@ -1,11 +1,16 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
 from .serializers import RegisterSerializer, LoginSerializer
-from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer
+from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.db import transaction
+from rest_framework.permissions import IsAuthenticated
 
+# from .jwt import MyJWTAuthentication  # our custom class
 
 
 from .jwt import generate_jwt
@@ -17,29 +22,13 @@ from django.db import connection
 
 class HealthCheckAPIView(APIView):
     authentication_classes = []
-    permission_classes = []
-
+    # permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             connection.ensure_connection()
-            return Response(
-                {
-                    "status": "ok",
-                    "service": "CAI Backend",
-                    "database": "connected"
-                },
-                status=status.HTTP_200_OK
-            )
+            return Response({"status": "ok","service": "CAI Backend","database": "connected"},status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {
-                    "status": "error",
-                    "service": "CAI Backend",
-                    "database": "disconnected",
-                    "error": str(e)
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"status": "error","service": "CAI Backend","database": "disconnected","error": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -59,11 +48,7 @@ class RegisterAPI(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         tokens = generate_jwt(user)
-        return Response({
-            "message": "Registration successful",
-            "user_id": user.u_id,
-            **tokens
-        }, status=status.HTTP_201_CREATED)
+        return Response({"message": "Registration successful","user_id": user.u_id,**tokens},status=status.HTTP_201_CREATED)
 
 
 class LoginAPI(APIView):
@@ -78,11 +63,7 @@ class LoginAPI(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
         tokens = generate_jwt(user)
-        return Response({
-            "message": "Login successful",
-            "user_id": user.u_id,
-            **tokens
-        }, status=status.HTTP_200_OK)
+        return Response({"message": "Login successful","user_id": user.u_id,**tokens}, status=status.HTTP_200_OK)
 
 
 
@@ -112,3 +93,36 @@ class VerifyOtpAPI(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+
+
+
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class userProfileAPI(APIView):
+    authentication_classes = [JWTAuthentication]  # Use SimpleJWT
+    permission_classes = [IsAuthenticated] 
+    @swagger_auto_schema(
+        operation_summary="Get User Profile",
+        operation_description="Retrieve authenticated user's profile details",
+        responses={200: UserProfileSerializer, 401: "Unauthorized"}
+    )
+    def get(self, request):
+        # user_id = request.user['user_id']
+        print("this is request user found ",request)
+        # print("this is request data found ",request)
+        user = request.user
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_summary="Update User Profile",
+        operation_description="Update authenticated user's profile",
+        request_body=UserProfileSerializer,
+        responses={200: "Profile updated successfully", 400: "Bad Request", 401: "Unauthorized"}
+    )
+    def put(self, request):
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Profile updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)

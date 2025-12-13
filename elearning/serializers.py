@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User
+from django.db import transaction
 from .utils import hash_password, verify_password
 from django.utils import timezone
 from datetime import timedelta
@@ -12,8 +13,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('first_name', 'last_name', 'email', 'mobile', 'level', 'password')
 
     def create(self, validated_data):
-        validated_data['password'] = hash_password(validated_data['password'])
-        return User.objects.create(**validated_data)
+        try:
+            with transaction.atomic():
+                validated_data['password'] = hash_password(validated_data['password'])
+                user = User.objects.create(**validated_data)
+                return user
+        except Exception:
+            raise serializers.ValidationError("Registration failed. Please try again.")
+        # validated_data['password'] = hash_password(validated_data['password'])
+        # return User.objects.create(**validated_data)
 
 
 class LoginSerializer(serializers.Serializer):
@@ -97,3 +105,13 @@ class VerifyOtpSerializer(serializers.Serializer):
         user.otp_created_at = None
         user.save()
         return user
+
+
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        # Include fields you want to expose
+        fields = ('u_id', 'first_name', 'last_name', 'email', 'mobile', 'level', 'created_at')
+        read_only_fields = ('u_id', 'email', 'created_at')  # make some fields read-only
