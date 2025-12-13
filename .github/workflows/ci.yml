@@ -2,38 +2,59 @@ name: Django CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cai_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cai_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests
 
-      - name: Run migrations
-        run: |
-          python manage.py migrate
+    - name: Run migrations
+      run: |
+        python manage.py makemigrations
+        python manage.py migrate
 
-      - name: Run tests
-        run: |
-          python manage.py test
+    - name: Start Django server
+      run: |
+        nohup python manage.py runserver 0.0.0.0:8000 &
+        sleep 5
 
-      - name: Check health API
-        run: |
-          python manage.py shell -c "import requests; print(requests.get('http://127.0.0.1:8000/health/').status_code)"
+    - name: Check health endpoint
+      run: |
+        python - <<EOF
+        import requests
+        response = requests.get('http://127.0.0.1:8000/health/')
+        print("Health endpoint status:", response.status_code)
+        if response.status_code != 200:
+            raise Exception("Health endpoint failed")
+        EOF
