@@ -8,3 +8,4 @@ sqlparse==0.5.4
 tzdata==2025.2
 requests>=2.31.0
 gunicorn
+drf-yasg

@@ -32,6 +32,8 @@ ALLOWED_HOSTS = ["*"]
 
 SIMPLE_JWT = {
     # Access token lifetime
+    "USER_ID_FIELD": "u_id",
+    "USER_ID_CLAIM": "user_id",
     'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
 
     # Refresh token lifetime
@@ -45,6 +47,17 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+#####################################this will use for swagger auth start#########################
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+
+#####################################this will use for swagger auth end#########################
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -55,6 +68,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_yasg',
     'elearning',
 ]
 

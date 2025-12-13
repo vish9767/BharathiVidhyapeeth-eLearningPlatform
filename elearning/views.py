@@ -3,6 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegisterSerializer, LoginSerializer
 from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+
 
 from .jwt import generate_jwt
 
@@ -45,6 +49,11 @@ class HealthCheckAPIView(APIView):
 
 class RegisterAPI(APIView):
     permission_classes = []
+    @swagger_auto_schema(
+        operation_summary="User Registration",
+        operation_description="Register a new user and return JWT tokens",
+        request_body=RegisterSerializer,
+        responses={201: openapi.Response("User registered successfully"),400: "Bad Request",},)
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -59,6 +68,11 @@ class RegisterAPI(APIView):
 
 class LoginAPI(APIView):
     permission_classes = []
+    @swagger_auto_schema(
+        operation_summary="User Login",
+        operation_description="Login a user and return JWT tokens",
+        request_body=LoginSerializer,
+        responses={200: openapi.Response("User logged in successfully"),400: "Bad Request",},)
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -74,6 +88,11 @@ class LoginAPI(APIView):
 
 class ForgotPasswordAPI(APIView):
     permission_classes = []
+    @swagger_auto_schema(
+        operation_summary="Forgot Password",
+        operation_description="Send OTP to user's email for password reset",
+        request_body=ForgotPasswordSerializer,
+        responses={200: openapi.Response("OTP sent to your email"),400: "Bad Request",},)
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -83,6 +102,11 @@ class ForgotPasswordAPI(APIView):
 
 class VerifyOtpAPI(APIView):
     permission_classes = []
+    @swagger_auto_schema(
+        operation_summary="Verify OTP",
+        operation_description="Verify OTP and reset user's password",
+        request_body=VerifyOtpSerializer,
+        responses={200: openapi.Response("Password reset successfully"),400: "Bad Request",},)
     def post(self, request):
         serializer = VerifyOtpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import User
 from .utils import hash_password, verify_password
+from django.utils import timezone
+from datetime import timedelta
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
