@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-!j4y6w2z7@mh%^!zxwcm$6z^+(5txc-4gp(oj-=+t@p3o(^t*6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 
@@ -149,4 +149,12 @@ DEFAULT_FROM_EMAIL = 'E-Learning App <fastapipython3@gmail.com>'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+import os
+# The absolute path where collectstatic will collect static files for deployment
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Optional: Additional directories for static files (if you have)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
