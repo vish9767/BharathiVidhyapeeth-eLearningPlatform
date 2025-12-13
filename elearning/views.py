@@ -6,6 +6,43 @@ from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer
 
 from .jwt import generate_jwt
 
+
+from django.db import connection
+
+
+
+class HealthCheckAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        try:
+            connection.ensure_connection()
+            return Response(
+                {
+                    "status": "ok",
+                    "service": "CAI Backend",
+                    "database": "connected"
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "status": "error",
+                    "service": "CAI Backend",
+                    "database": "disconnected",
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+
+
+
+
 class RegisterAPI(APIView):
     permission_classes = []
     def post(self, request):
