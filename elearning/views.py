@@ -65,10 +65,11 @@ class LoginAPI(APIView):
         tokens = generate_jwt(user)
         return Response({"message": "Login successful","user_id": user.u_id,**tokens}, status=status.HTTP_200_OK)
 
+from rest_framework.permissions import AllowAny
 
 
 class ForgotPasswordAPI(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
     @swagger_auto_schema(
         operation_summary="Forgot Password",
         operation_description="Send OTP to user's email for password reset",

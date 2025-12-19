@@ -64,13 +64,16 @@ class ForgotPasswordSerializer(serializers.Serializer):
         user.save()
 
         # send OTP via email (example)
-        send_mail(
-            subject='Your OTP for Password Reset',
-            message=f'Your OTP is {otp}. It will expire in 10 minutes.',
-            from_email='noreply@example.com',
-            recipient_list=[email],
-        )
-        return user
+        try:
+            send_mail(
+                subject='Your OTP for Password Reset',
+                message=f'Your OTP is {otp}. It will expire in 10 minutes.',
+                from_email='noreply@example.com',
+                recipient_list=[email],
+            )
+            return user
+        except Exception as e:
+            return {"user":user,'otp':otp}
     
 
 class VerifyOtpSerializer(serializers.Serializer):
