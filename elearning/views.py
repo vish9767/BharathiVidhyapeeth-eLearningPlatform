@@ -70,11 +70,11 @@ from rest_framework.permissions import AllowAny
 
 class ForgotPasswordAPI(APIView):
     permission_classes = [AllowAny]
-    @swagger_auto_schema(
-        operation_summary="Forgot Password",
-        operation_description="Send OTP to user's email for password reset",
-        request_body=ForgotPasswordSerializer,
-        responses={200: openapi.Response("OTP sent to your email"),400: "Bad Request",},)
+    # @swagger_auto_schema(
+    #     operation_summary="Forgot Password",
+    #     operation_description="Send OTP to user's email for password reset",
+    #     request_body=ForgotPasswordSerializer,
+    #     responses={200: openapi.Response("OTP sent to your email"),400: "Bad Request",},)
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
