@@ -85,3 +85,21 @@ class Media(models.Model):
         return self.topic.title + " - " + self.media_type
     
 
+
+class Questions(models.Model):
+    q_id = models.AutoField(primary_key=True)
+    topic = models.ForeignKey('Topic', on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    option_a = models.CharField(max_length=255)
+    option_b = models.CharField(max_length=255)
+    option_c = models.CharField(max_length=255)
+    option_d = models.CharField(max_length=255)
+    correct_option = models.CharField(max_length=1, choices=[('A', 'Option A'), ('B', 'Option B'), ('C', 'Option C'), ('D', 'Option D')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Question {self.q_id} for Topic {self.topic.title}"
+    
+    
+    
+

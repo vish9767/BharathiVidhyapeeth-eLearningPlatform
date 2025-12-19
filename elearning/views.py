@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .serializers import RegisterSerializer, LoginSerializer
-from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer
+from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer,QuestionsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db import transaction
-from .models import User,Course,Topic
+from .models import User,Course,Topic,Questions
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 # from .jwt import MyJWTAuthentication  # our custom class
@@ -242,11 +242,14 @@ class CourseTopicsAPIView(APIView):
             context={'request': request}
         )
 
+        questions = Questions.objects.filter(topic__course=course)
+        questions_serializer = QuestionsSerializer(questions, many=True)
         return Response(
             {
                 "course_id": course.c_id,
                 "course_title": course.title,
-                "topics": serializer.data
+                "topics": serializer.data,
+                "questions": questions_serializer.data,
             },
             status=status.HTTP_200_OK
         )

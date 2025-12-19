@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User,Course,Topic
+from .models import User,Course,Topic,Questions
 from django.db import transaction
 from .utils import hash_password, verify_password
 from django.utils import timezone
@@ -177,3 +177,8 @@ class TopicSerializer(serializers.ModelSerializer):
             'media',
             'created_at'
         ]
+
+class QuestionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Questions
+        fields = ['q_id','question_text','option_a','option_b','option_c','option_d']
