@@ -1,14 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 
 from .serializers import RegisterSerializer, LoginSerializer
-from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer
+from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated
+from .models import User,Course,Module
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 # from .jwt import MyJWTAuthentication  # our custom class
 
@@ -126,3 +126,59 @@ class userProfileAPI(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Profile updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+
+
+#####################################################course API view#########################################
+
+
+
+class CourseCreateAPI(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    @swagger_auto_schema(operation_summary="Create Course",request_body=CourseSerializer)
+    def post(self, request):
+        with transaction.atomic():
+            serializer = CourseSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response({"message": "Course created","data": serializer.data},status=status.HTTP_201_CREATED)
+
+class CourseListAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        operation_summary="Get Course List",
+        operation_description="Retrieve a list of all courses",
+        responses={200: CourseSerializer(many=True), 401: "Unauthorized"}
+    )
+    def get(self, request):
+        user_level = request.user.level  # 1 or 2
+        courses = Course.objects.filter(is_delete=False).order_by("-created_at")
+        serializer = CourseSerializer(courses, many=True)
+        return Response({"message": "Courses fetched","data": serializer.data})
+    
+
+class CourseDetailAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        operation_summary="Get Course Detail",
+        operation_description="Retrieve a specific course by ID",
+        responses={200: CourseSerializer, 401: "Unauthorized"}
+    )
+    def get(self, request, c_id):
+        course = Course.objects.get(c_id=c_id, is_delete=False)
+        serializer = CourseSerializer(course)
+        return Response(serializer.data)
+    
+class CourseDeleteAPI(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    @swagger_auto_schema(
+        operation_summary="Delete Course",
+        operation_description="Delete a specific course by ID",
+        responses={200: "Course deleted successfully", 401: "Unauthorized"})
+    def delete(self, request, c_id):
+        course = Course.objects.get(c_id=c_id)
+        course.is_delete = True
+        course.save()
+        return Response({"message": "Course deleted"})

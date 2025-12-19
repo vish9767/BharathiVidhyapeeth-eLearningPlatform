@@ -28,7 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
+# CSRF_TRUSTED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = ["*"]
 
 SIMPLE_JWT = {
     # Access token lifetime
@@ -173,3 +174,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+
+

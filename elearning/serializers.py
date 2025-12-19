@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User,Course,Module
 from django.db import transaction
 from .utils import hash_password, verify_password
 from django.utils import timezone
@@ -115,3 +115,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Include fields you want to expose
         fields = ('u_id', 'first_name', 'last_name', 'email', 'mobile', 'level', 'created_at')
         read_only_fields = ('u_id', 'email', 'created_at')  # make some fields read-only
+
+
+
+
+
+
+########################################course Serializer#########################################
+
+
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = (
+            "c_id",
+            "title",
+            "description",
+            "created_at",
+        )
