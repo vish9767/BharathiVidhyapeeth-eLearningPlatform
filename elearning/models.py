@@ -50,16 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Course(models.Model):
     c_id = models.AutoField(primary_key=True)
-    # LEVEL_CHOICES = [
-    #     ('L1', 'Level 1'),
-    #     ('L2', 'Level 2'),blank=True, null=True
-    #     ]
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    # target_levels = models.CharField(
-    #     max_length=2,
-    #     choices=LEVEL_CHOICES
-    # )
     is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -68,31 +60,28 @@ class Course(models.Model):
     
 
 
-
-class Module(models.Model):
-    m_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey('Course',on_delete=models.CASCADE,related_name='modules')
-    title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    overview = models.TextField()
-    is_delete = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    def __str__(self):
-        return self.title
-    
 
 class Topic(models.Model):
     t_id = models.AutoField(primary_key=True)
-    module = models.ForeignKey('Module',on_delete=models.CASCADE,related_name='topics')
+    course = models.ForeignKey('Course',on_delete=models.CASCADE,related_name='modules')
+    description = models.TextField(null=True, blank=True)
     title = models.CharField(max_length=255)
     is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
-        return self.title
+        return f"{self.course.title} - {self.title}"
+
+class Media(models.Model):
+    m_id = models.AutoField(primary_key=True)
+    topic = models.ForeignKey('Topic', on_delete=models.CASCADE, related_name='media')
+    media_type = models.CharField(max_length=20,choices=[('video', 'Video'),('image', 'Image'),('animation', 'Animation'),('document', 'Word File'),])
+    file = models.FileField(upload_to='media/')
+    caption = models.CharField(max_length=255, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.topic.title + " - " + self.media_type
     
 
-
-    def __str__(self):
-        return f"{self.module.title} - {self.title}"

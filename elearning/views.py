@@ -7,7 +7,7 @@ from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfi
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db import transaction
-from .models import User,Course,Module
+from .models import User,Course,Topic
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 # from .jwt import MyJWTAuthentication  # our custom class
@@ -70,11 +70,11 @@ from rest_framework.permissions import AllowAny
 
 class ForgotPasswordAPI(APIView):
     permission_classes = [AllowAny]
-    # @swagger_auto_schema(
-    #     operation_summary="Forgot Password",
-    #     operation_description="Send OTP to user's email for password reset",
-    #     request_body=ForgotPasswordSerializer,
-    #     responses={200: openapi.Response("OTP sent to your email"),400: "Bad Request",},)
+    @swagger_auto_schema(
+        operation_summary="Forgot Password",
+        operation_description="Send OTP to user's email for password reset",
+        request_body=ForgotPasswordSerializer,
+        responses={200: openapi.Response("OTP sent to your email"),400: "Bad Request",},)
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -183,3 +183,70 @@ class CourseDeleteAPI(APIView):
         course.is_delete = True
         course.save()
         return Response({"message": "Course deleted"})
+    
+
+from .models import Media
+from .serializers import MediaSerializer
+from rest_framework import status, permissions
+from .serializers import TopicSerializer
+
+class MediaListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """
+        Get all media or media by topic_id
+        """
+        topic_id = request.query_params.get('topic_id')
+
+        media_qs = Media.objects.filter(is_delete=False)
+
+        if topic_id:
+            media_qs = media_qs.filter(topic_id=topic_id)
+
+        serializer = MediaSerializer(
+            media_qs,
+            many=True,
+            context={'request': request}
+        )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+
+class CourseTopicsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, course_id):
+        """
+        Get all topics for a given course ID
+        """
+        try:
+            course = Course.objects.get(c_id=course_id, is_delete=False)
+        except Course.DoesNotExist:
+            return Response(
+                {"detail": "Course not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        topics = Topic.objects.filter(
+            course=course,
+            is_delete=False
+        ).prefetch_related('media')
+
+        serializer = TopicSerializer(
+            topics,
+            many=True,
+            context={'request': request}
+        )
+
+        return Response(
+            {
+                "course_id": course.c_id,
+                "course_title": course.title,
+                "topics": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )

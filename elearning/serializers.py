@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User,Course,Module
+from .models import User,Course,Topic
 from django.db import transaction
 from .utils import hash_password, verify_password
 from django.utils import timezone
@@ -47,9 +47,9 @@ from django.core.mail import send_mail  # for sending OTP via email
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-
     def validate_email(self, value):
         try:
+            print("Validating email: ", value)
             user = User.objects.get(email=value)
         except User.DoesNotExist:
             raise serializers.ValidationError("Email not registered")
@@ -62,18 +62,15 @@ class ForgotPasswordSerializer(serializers.Serializer):
         user.otp = otp
         user.otp_created_at = timezone.now()
         user.save()
-
+        print(f"OTP for {email} is {otp}")
         # send OTP via email (example)
-        try:
-            send_mail(
-                subject='Your OTP for Password Reset',
-                message=f'Your OTP is {otp}. It will expire in 10 minutes.',
-                from_email='noreply@example.com',
-                recipient_list=[email],)
-            return user
-        except Exception as e:
-            return {"user":user,'otp':otp}
-    
+        send_mail(
+            subject='Your OTP for Password Reset',
+            message=f'Your OTP is {otp}. It will expire in 10 minutes.',
+            from_email='noreply@example.com',
+            recipient_list=[email],)
+        return user
+
 
 class VerifyOtpSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -137,3 +134,46 @@ class CourseSerializer(serializers.ModelSerializer):
             "description",
             "created_at",
         )
+
+
+
+
+
+########################################course Serializer#########################################
+from rest_framework import serializers
+from .models import Media
+
+class MediaSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Media
+        fields = [
+            'm_id',
+            'media_type',
+            'file_url',
+            'caption',
+            'created_at'
+        ]
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url
+    
+
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    media = MediaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Topic
+        fields = [
+            't_id',
+            'title',
+            'description',
+            'media',
+            'created_at'
+        ]

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterAPI, LoginAPI, ForgotPasswordAPI, VerifyOtpAPI, HealthCheckAPIView,userProfileAPI,CourseListAPI,CourseCreateAPI,CourseDetailAPI,CourseDeleteAPI
+from .views import RegisterAPI, LoginAPI, ForgotPasswordAPI, VerifyOtpAPI, HealthCheckAPIView,userProfileAPI,CourseListAPI,CourseCreateAPI,CourseDetailAPI,CourseDeleteAPI,MediaListAPIView,CourseTopicsAPIView
 
 urlpatterns = [
     path("health/", HealthCheckAPIView.as_view(), name="health-check"),
@@ -12,5 +12,6 @@ urlpatterns = [
     path('courses/create/', CourseCreateAPI.as_view()),
     path('courses/<int:c_id>/', CourseDetailAPI.as_view()),
     path('courses/delete/<int:c_id>/', CourseDeleteAPI.as_view()),
-
+    path('media/', MediaListAPIView.as_view(), name='media-list'),
+    path('courses/<int:course_id>/topics/', CourseTopicsAPIView.as_view(), name='course-topics'),
 ]
