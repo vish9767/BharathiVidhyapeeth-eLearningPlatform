@@ -100,6 +100,23 @@ class Questions(models.Model):
     def __str__(self):
         return f"Question {self.q_id} for Topic {self.topic.title}"
     
-    
-    
 
+    
+class UserAnswer(models.Model):
+    answer_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('elearning.User',on_delete=models.CASCADE,related_name='answers')
+    question = models.ForeignKey('Questions',on_delete=models.CASCADE,related_name='user_answers')
+    selected_option = models.CharField(max_length=1,choices=[('A', 'Option A'), ('B', 'Option B'), ('C', 'Option C'), ('D', 'Option D')])
+    is_correct = models.BooleanField(default=False)
+    answered_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.user.email} - Q{self.question.q_id}"
+    
+class UserCourseProgress(models.Model):
+    progress_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('elearning.User',on_delete=models.CASCADE,related_name='course_progress')
+    course = models.ForeignKey('Course',on_delete=models.CASCADE,related_name='user_progress')
+    completed_topics = models.ManyToManyField('Topic',blank=True)
+    last_accessed = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user.email} - {self.course.title}"
