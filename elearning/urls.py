@@ -14,4 +14,5 @@ urlpatterns = [
     path('courses/delete/<int:c_id>/', CourseDeleteAPI.as_view()),
     path('media/', MediaListAPIView.as_view(), name='media-list'),
     path('courses/<int:course_id>/topics/', CourseTopicsAPIView.as_view(), name='course-topics'),
+    
 ]
