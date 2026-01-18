@@ -29,7 +29,6 @@ DEBUG = True
 ALLOWED_HOSTS = ["35.175.195.215","localhost","127.0.0.1"]
 
 # CSRF_TRUSTED_ORIGINS = ["*"]
-CORS_ALLOWED_ORIGINS = ["*"]
 
 SIMPLE_JWT = {
     # Access token lifetime
