@@ -182,3 +182,17 @@ class QuestionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions
         fields = ['q_id','question_text','option_a','option_b','option_c','option_d']
+
+
+
+from rest_framework import serializers
+
+class AnswerItemSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    selected_option = serializers.ChoiceField(choices=['A', 'B', 'C', 'D'])
+
+
+class SubmitTestSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    topic_id = serializers.IntegerField()
+    answers = AnswerItemSerializer(many=True)

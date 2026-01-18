@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build:   #this is CI part  start
     runs-on: ubuntu-latest
 
     services:
@@ -58,3 +58,53 @@ jobs:
         if response.status_code != 200:
             raise Exception("Health endpoint failed")
         EOF
+#this is CI part ends
+# ---------------- CD PART ----------------
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 35.175.195.215
+          username: ec2-user
+          key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEpAIBAAKCAQEA0J0kTapv2lDTu0d2OnFc6MoNG9gYGLXPHbbGOEEI9N08FlZT
+            DAiVbFddXT0ai2Y84shvgy3qXtmff7RHqksFE0BIbQj9+dJQ46PGgB108bIaymr7
+            +PD1RAnpSCIoXu9Vm18ESyeuoHd8vEA/SE27J8JqF2IFRKWSgKLyyccRO+vZsKr2
+            4ZkvfGNh9wVTgEVZ1GsNYqH9D8eDpWUz7ThGwNW6OiUeW0XZy7mzwnJ7LmcicQYx
+            YSWSfTKwMLGWYYkckDa79zJpnOD0flR6Yei+YSs1jfToWQdMvNNBtpVvMikqT2yI
+            kLJ5zaYRgYA7UoeGdIr709S5gOD5UeQQiBC8lwIDAQABAoIBAQCycnknZm+flBxJ
+            yus7OtV627sy4jpaiMrOZBZS8G605roLcXRAiucmceUPaMFYFPBoHYQl9hTRZd6l
+            4pSa+ukweoB5pIN8O4et8d5OoOP0C6IXHETFwXhL5x6B8ZYO/zN/YFvP3fXmlc9B
+            SMPZGYTKkecmcVaITglvt/Nu3rXDRoTcvdSUNI7oi2HpeZ3wGBuEmpgnzGYe4RnR
+            HHRe3vb68najdvtmNghUAYJXY62bNZc3q5OUJ1IGnV+KYVlXdd5ecsYvMKXciUVg
+            gvuguybfbr+N7JwvqFwoHQCAamE82g7xlGYU4u3P4omAnF1ocZ8kQG4Aw5I/0/os
+            UuYqI5pBAoGBAOqBNu9y0445RLFAkrEIuU7vuW5mnI8QWc56OnxucBd4Ag8CfNfs
+            Am7RStMRTojG8k+Z1GI9AcuGhimsqIosF0p35585thqEtxunCrtqWUa5tbhYrdl4
+            trFmIaQj+tUIOFM1nJMyrHcfBTa3hVoJgXAQKTZ0Tww2S5ltdMXzJ/BfAoGBAOO8
+            YevXbop/XpL0Bm2+Okj6CYz/6MxBHf22LhuGEr0YFg8bLEosec2IdlZ8eEue/TSv
+            w3LTR9MaCjiOls//9wb+BNIrNzQOGk/kPLQLkUJg1ao7KJSepUVuSdMRVusoz74v
+            /Y1j+T+WPc8s9KkKRAekjYbAWAQc8crIz7mnQj7JAoGAKHrvsbvfmxB1tCdSay73
+            VhH5r34VDnkjF4pv6CTkQpjbuh2S0W8TKHAGe5LkPKYjE+yZBfBEDA8Hv8/nNBrS
+            Vm+GUy0SK1e3iBV4u8tq59OM8+qS8BRvbQYVTpFLblTB7FM32Q0JSnLXYo+hfF5h
+            sqeHhbfkIVaKDE0huD32Kf8CgYEAwGjqZsN2nsdsVUado90EC6JNrXaN7vzZZQGm
+            RRTrAh62jH7N1cFsC65PJVU2odWrYvdZb8t4tLAckJpQa159DMhTtGpU0sNTkcpp
+            S0k2qll8TL5808ySIG5FK3JL+JVbp/mOBQbBkOrUQBVghO2qeraZ6I7cDmWSGF2/
+            u8DIJJkCgYADyBSBQtizSTgW5bwWelvcMWlZQIypTMsC/jJyr8wOl5aEoR/qjMvJ
+            KL5FgT2jBh3oM7PNT0hqV0r92618jb428fnjxlC44QMvU9bpu1Yu5DDtciaTVHs3
+            tuxc1DknIhOO8ZbEMZDUhizVz1ckNTWdmi2MIV3yJeXzcF20ajpqyQ==
+            -----END RSA PRIVATE KEY-----
+          script: |
+            cd /home/ec2-user/apps/BharathiVidhyapeeth-eLearningPlatform
+            git pull origin main
+            source myenv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+            sudo systemctl restart gunicorn
