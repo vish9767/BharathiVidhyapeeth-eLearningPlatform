@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import render
 
 from .serializers import RegisterSerializer, LoginSerializer
 from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer,QuestionsSerializer,SubmitTestSerializer
@@ -15,6 +16,12 @@ from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 from .jwt import generate_jwt
 from django.db import connection
+
+
+def home_html(request):
+    return render(request, "home.html")
+
+
 
 
 
