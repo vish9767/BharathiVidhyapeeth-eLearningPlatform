@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User,Course,Topic,Questions
+from .models import User,Course,Topic,Questions,UserCourseProgress
 from django.db import transaction
 from .utils import hash_password, verify_password
 from django.utils import timezone
@@ -41,6 +41,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
 
 from .utils import generate_otp
 from django.core.mail import send_mail  # for sending OTP via email
@@ -126,18 +128,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
+    comp_status = serializers.SerializerMethodField()
     class Meta:
         model = Course
-        fields = (
-            "c_id",
-            "title",
-            "description",
-            "created_at",
-        )
-
-
-
-
+        fields = ("c_id","title","description","created_at","comp_status")
+    def get_comp_status(self, course):
+        user = self.context["request"].user
+        try:
+            progress = UserCourseProgress.objects.get(
+                user=user,
+                course=course
+            )
+        except UserCourseProgress.DoesNotExist:
+            return False
+        total_topics = Topic.objects.filter(
+            course=course,
+            is_delete=False
+        ).count()
+        completed_topics = progress.completed_topics.count()
+        if total_topics == 0:
+            return False
+        return completed_topics == total_topics
 
 ########################################course Serializer#########################################
 from rest_framework import serializers

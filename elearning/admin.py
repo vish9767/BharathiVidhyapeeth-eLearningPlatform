@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User,Course,Media,Topic,Questions
+from .models import User,Course,Media,Topic,Questions,UserAnswer,UserCourseProgress
 # Register your models here.
 admin.site.site_header = "CAI Elearning Admin"
 admin.site.site_title = "CAI Elearning Admin Portal"
@@ -10,5 +10,6 @@ admin.site.register(Course)
 admin.site.register(Media)
 admin.site.register(Topic)
 admin.site.register(Questions)
-
+admin.site.register(UserAnswer)
+admin.site.register(UserCourseProgress)
 

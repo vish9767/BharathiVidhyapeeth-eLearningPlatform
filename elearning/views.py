@@ -4,7 +4,7 @@ from rest_framework import status
 from django.shortcuts import render
 
 from .serializers import RegisterSerializer, LoginSerializer
-from .serializers import ForgotPasswordSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer,QuestionsSerializer,SubmitTestSerializer
+from .serializers import ForgotPasswordSerializer,LogoutSerializer, VerifyOtpSerializer,UserProfileSerializer,CourseSerializer,QuestionsSerializer,SubmitTestSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db import transaction
@@ -55,6 +55,42 @@ class LoginAPI(APIView):
         user = serializer.validated_data
         tokens = generate_jwt(user)
         return Response({"message": "Login successful","user_id": user.u_id,**tokens}, status=status.HTTP_200_OK)
+    
+
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+
+class LogoutAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="User Logout",
+        operation_description="Logout user by blacklisting refresh token",
+        request_body=LogoutSerializer,
+        responses={
+            200: openapi.Response("User logged out successfully"),
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            refresh_token = serializer.validated_data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {"message": "Logout successful"},
+                status=status.HTTP_200_OK
+            )
+        except Exception:
+            return Response(
+                {"error": "Invalid or expired refresh token"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 from rest_framework.permissions import AllowAny
 class ForgotPasswordAPI(APIView):
@@ -117,16 +153,44 @@ class CourseCreateAPI(APIView):
             serializer.save()
         return Response({"message": "Course created","data": serializer.data},status=status.HTTP_201_CREATED)
 
-class CourseListAPI(APIView):
-    permission_classes = [IsAuthenticated]
-    @swagger_auto_schema(operation_summary="Get Course List",operation_description="Retrieve a list of all courses",responses={200: CourseSerializer(many=True), 401: "Unauthorized"})
-    def get(self, request):
-        user_level = request.user.level  # 1 or 2
-        courses = Course.objects.filter(is_delete=False).order_by("-created_at")
-        serializer = CourseSerializer(courses, many=True)
-        return Response({"message": "Courses fetched","data": serializer.data})
+# class CourseListAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+#     @swagger_auto_schema(operation_summary="Get Course List",operation_description="Retrieve a list of all courses",responses={200: CourseSerializer(many=True), 401: "Unauthorized"})
+#     def get(self, request):
+#         user_level = request.user.level  # 1 or 2
+#         courses = Course.objects.filter(is_delete=False).order_by("-created_at")
+#         # serializer = CourseSerializer(courses, many=True)
+#         serializer = CourseSerializer(
+#             courses,
+#             many=True,
+#             context={"request": request}
+#         )
+#         return Response({"message": "Courses fetched","data": serializer.data})
     
 
+class CourseListAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Get Course List",
+        operation_description="Retrieve all courses with completion status",
+        responses={200: CourseSerializer(many=True), 401: "Unauthorized"}
+    )
+    def get(self, request):
+        courses = Course.objects.filter(
+            is_delete=False
+        ).order_by("-created_at")
+
+        serializer = CourseSerializer(
+            courses,
+            many=True,
+            context={"request": request}
+        )
+
+        return Response({
+            "message": "Courses fetched",
+            "data": serializer.data
+        })
 class CourseDetailAPI(APIView):
     permission_classes = [IsAuthenticated]
     @swagger_auto_schema(operation_summary="Get Course Detail",operation_description="Retrieve a specific course by ID",responses={200: CourseSerializer, 401: "Unauthorized"})
@@ -212,3 +276,67 @@ class SubmitTestAPI(APIView):
         total_questions = len(answers)
         score_percentage = round((correct_count / total_questions) * 100, 2)
         return Response({"message": "Test submitted successfully","total_questions": total_questions,"correct_answers": correct_count,"wrong_answers": total_questions - correct_count,"score_percentage": score_percentage}, status=status.HTTP_201_CREATED)
+    
+
+
+
+# result api 
+
+
+
+class UserResultSummaryAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        total_attempted = UserAnswer.objects.filter(user=user).count()
+        correct = UserAnswer.objects.filter(user=user, is_correct=True).count()
+        wrong = total_attempted - correct
+
+        percentage = 0
+        if total_attempted > 0:
+            percentage = round((correct / total_attempted) * 100, 2)
+
+        return Response({
+            "total_questions": total_attempted,
+            "correct_answers": correct,
+            "wrong_answers": wrong,
+            "percentage": percentage
+        })
+    
+
+from django.db.models import Count, Q
+
+
+class UserCourseResultAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        results = (
+            UserAnswer.objects
+            .filter(user=user)
+            .values(
+                "question__topic__course__c_id",
+                "question__topic__course__title"
+            )
+            .annotate(
+                total=Count("answer_id"),
+                correct=Count("answer_id", filter=Q(is_correct=True))
+            )
+        )
+
+        response = []
+        for r in results:
+            percentage = round((r["correct"] / r["total"]) * 100, 2)
+            response.append({
+                "course_id": r["question__topic__course__c_id"],
+                "course_title": r["question__topic__course__title"],
+                "total_questions": r["total"],
+                "correct_answers": r["correct"],
+                "percentage": percentage
+            })
+
+        return Response(response)
