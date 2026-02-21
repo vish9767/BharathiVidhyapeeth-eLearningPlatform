@@ -188,11 +188,12 @@ class QuestionsSerializer(serializers.ModelSerializer):
 from rest_framework import serializers
 
 class AnswerItemSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField()
-    selected_option = serializers.ChoiceField(choices=['A', 'B', 'C', 'D'])
+    q_id = serializers.IntegerField()
+    answer = serializers.CharField()
+    # selected_option = serializers.ChoiceField(choices=['A', 'B', 'C', 'D'])
 
 
 class SubmitTestSerializer(serializers.Serializer):
-    course_id = serializers.IntegerField()
+    chapter_id = serializers.IntegerField()
     topic_id = serializers.IntegerField()
     answers = AnswerItemSerializer(many=True)
