@@ -316,56 +316,31 @@ class SubmitTestAPI(APIView):
     def post(self, request):
         serializer = SubmitTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = request.user
-        course_id = int(serializer.validated_data['chapter_id'])
         topic_id = int(serializer.validated_data['topic_id'])
-        # print("topic ",topic_id)
-        # print("course_id",course_id)
-        # print("this is req data ",request.data)
         answers = serializer.validated_data['answers']   # ✅ FIXED
         # print("this is answer",answers)
         # validate course + topic
         try:
-            course = Course.objects.get(c_id=course_id, is_delete=False)
-            topic = Topic.objects.get(t_id=topic_id, course=course)
+            topic = Topic.objects.get(t_id=topic_id)
+            course=topic.course
         except (Course.DoesNotExist, Topic.DoesNotExist):
-            return Response(
-                {"error": "Invalid course or topic"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({"error": "Invalid course or topic"},status=status.HTTP_400_BAD_REQUEST)
         correct_count = 0
-
         with transaction.atomic():
             for ans in answers:
-                print("answer",ans)
                 try:
                     question = Questions.objects.get(q_id=int(ans.get('q_id', 0)),topic=topic)
                 except Questions.DoesNotExist:
                     continue  # skip invalid question
-
-                # user_answer = self.normalize(ans['answer'])
                 user_answer = self.normalize(ans.get('answer', ''))
                 correct_answer = self.normalize(question.correct_option)
-
                 is_correct = user_answer == correct_answer
-
                 if is_correct:
                     correct_count += 1
-
-                UserAnswer.objects.create(
-                    user=user,
-                    question=question,
-                    selected_option = ans.get('answer', ''),
-                    is_correct=is_correct
-                )
-
+                UserAnswer.objects.create(user=user,question=question,selected_option = ans.get('answer', ''),is_correct=is_correct)
             # progress update
-            progress, _ = UserCourseProgress.objects.get_or_create(
-                user=user,
-                course=course
-            )
+            progress, _ = UserCourseProgress.objects.get_or_create(user=user,course=course)
             progress.completed_topics.add(topic)
 
         total_questions = len(answers)

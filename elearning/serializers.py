@@ -194,6 +194,5 @@ class AnswerItemSerializer(serializers.Serializer):
 
 
 class SubmitTestSerializer(serializers.Serializer):
-    chapter_id = serializers.IntegerField()
     topic_id = serializers.IntegerField()
     answers = AnswerItemSerializer(many=True)
