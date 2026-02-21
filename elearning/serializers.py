@@ -155,40 +155,29 @@ from rest_framework import serializers
 from .models import Media
 
 class MediaSerializer(serializers.ModelSerializer):
-    file_url = serializers.SerializerMethodField()
-
+    media_file = serializers.SerializerMethodField()
     class Meta:
         model = Media
-        fields = [
-            'm_id',
-            'media_type',
-            'file_url',
-            'caption',
-            'created_at'
-        ]
-
-    def get_file_url(self, obj):
+        fields = ['m_id', 'media_type', 'media_file', 'caption', 'created_at']
+    def get_media_file(self, obj):
+        """
+        Return the correct media URL depending on media_type
+        """
         request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(obj.file.url)
-        return obj.file.url
-    
+        if obj.media_type == 'video':
+            return obj.video_url
+        elif obj.file:
+            # Return full URL for the uploaded file
+            return request.build_absolute_uri(obj.file.url) if request else obj.file.url
+        return None
 
 
 
 class TopicSerializer(serializers.ModelSerializer):
     media = MediaSerializer(many=True, read_only=True)
-
     class Meta:
         model = Topic
-        fields = [
-            't_id',
-            'title',
-            'description',
-            'media',
-            'created_at'
-        ]
-
+        fields = ['t_id','title','description','media','created_at']
 class QuestionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions

@@ -231,21 +231,40 @@ class MediaListAPIView(APIView):
 
 
 
+# class CourseTopicsAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     def get(self, request, course_id):
+#         """
+#         Get all topics for a given course ID
+#         """
+#         try:
+#             course = Course.objects.get(c_id=course_id, is_delete=False)
+#         except Course.DoesNotExist:
+#             return Response({"detail": "Course not found"},status=status.HTTP_404_NOT_FOUND)
+#         topics = Topic.objects.filter(course=course,is_delete=False).prefetch_related('media')
+#         serializer = TopicSerializer(topics,many=True,context={'request': request})
+#         questions = Questions.objects.filter(topic__course=course)
+#         questions_serializer = QuestionsSerializer(questions, many=True)
+#         return Response({"course_id": course.c_id,"course_title": course.title,"topics": serializer.data,"questions": questions_serializer.data,},status=status.HTTP_200_OK)
+
 class CourseTopicsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, course_id):
-        """
-        Get all topics for a given course ID
+        """x`
+        Get all topics for a given course ID with related media
         """
         try:
             course = Course.objects.get(c_id=course_id, is_delete=False)
         except Course.DoesNotExist:
-            return Response({"detail": "Course not found"},status=status.HTTP_404_NOT_FOUND)
-        topics = Topic.objects.filter(course=course,is_delete=False).prefetch_related('media')
-        serializer = TopicSerializer(topics,many=True,context={'request': request})
+            return Response({"detail": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+        topics = Topic.objects.filter(course=course, is_delete=False).prefetch_related('media')
+        serializer = TopicSerializer(topics, many=True, context={'request': request})
         questions = Questions.objects.filter(topic__course=course)
         questions_serializer = QuestionsSerializer(questions, many=True)
-        return Response({"course_id": course.c_id,"course_title": course.title,"topics": serializer.data,"questions": questions_serializer.data,},status=status.HTTP_200_OK)
+        return Response({"course_id": course.c_id,"course_title": course.title,"topics": serializer.data,
+            "questions": questions_serializer.data,}, status=status.HTTP_200_OK)
+
 
 class SubmitTestAPI(APIView):
     authentication_classes = [JWTAuthentication]
