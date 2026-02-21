@@ -320,11 +320,11 @@ class SubmitTestAPI(APIView):
         user = request.user
         course_id = int(serializer.validated_data['chapter_id'])
         topic_id = int(serializer.validated_data['topic_id'])
-        print("topic ",topic_id)
-        print("course_id",course_id)
-        print("this is req data ",request.data)
+        # print("topic ",topic_id)
+        # print("course_id",course_id)
+        # print("this is req data ",request.data)
         answers = serializer.validated_data['answers']   # ✅ FIXED
-        print("this is answer",answers)
+        # print("this is answer",answers)
         # validate course + topic
         try:
             course = Course.objects.get(c_id=course_id, is_delete=False)
