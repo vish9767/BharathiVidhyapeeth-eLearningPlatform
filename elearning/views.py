@@ -250,11 +250,12 @@ class MediaListAPIView(APIView):
 class CourseTopicsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, course_id):
+    def post(self, request):
         """x`
         Get all topics for a given course ID with related media
         """
         try:
+            course_id = request.data.get('c_id')
             course = Course.objects.get(c_id=course_id, is_delete=False)
         except Course.DoesNotExist:
             return Response({"detail": "Course not found"}, status=status.HTTP_404_NOT_FOUND)

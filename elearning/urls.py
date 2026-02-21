@@ -14,7 +14,7 @@ urlpatterns = [
     path('courses/<int:c_id>/', CourseDetailAPI.as_view()),
     path('courses/delete/<int:c_id>/', CourseDeleteAPI.as_view()),
     path('media/', MediaListAPIView.as_view(), name='media-list'),
-    path('courses/<int:course_id>/topics/', CourseTopicsAPIView.as_view(), name='course-topics'),
+    path('courses/topics/', CourseTopicsAPIView.as_view(), name='course-topics'),
     path("results/summary/",UserResultSummaryAPI.as_view()),
     path("results/course/",UserCourseResultAPI.as_view()),#result course wise 
     path('',home_html),
