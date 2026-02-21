@@ -22,9 +22,6 @@ def home_html(request):
     return render(request, "home.html")
 
 
-
-
-
 class HealthCheckAPIView(APIView):
     authentication_classes = []
     # permission_classes = [IsAuthenticated]
@@ -63,34 +60,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class LogoutAPI(APIView):
     permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_summary="User Logout",
-        operation_description="Logout user by blacklisting refresh token",
-        request_body=LogoutSerializer,
-        responses={
-            200: openapi.Response("User logged out successfully"),
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-    )
+    @swagger_auto_schema(operation_summary="User Logout",operation_description="Logout user by blacklisting refresh token",request_body=LogoutSerializer,responses={200: openapi.Response("User logged out successfully"),400: "Bad Request",401: "Unauthorized",})
     def post(self, request):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         try:
             refresh_token = serializer.validated_data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response(
-                {"message": "Logout successful"},
-                status=status.HTTP_200_OK
-            )
+            return Response({"message": "Logout successful"},status=status.HTTP_200_OK)
         except Exception:
-            return Response(
-                {"error": "Invalid or expired refresh token"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Invalid or expired refresh token"},status=status.HTTP_400_BAD_REQUEST)
 
 from rest_framework.permissions import AllowAny
 class ForgotPasswordAPI(APIView):
@@ -153,44 +133,13 @@ class CourseCreateAPI(APIView):
             serializer.save()
         return Response({"message": "Course created","data": serializer.data},status=status.HTTP_201_CREATED)
 
-# class CourseListAPI(APIView):
-#     permission_classes = [IsAuthenticated]
-#     @swagger_auto_schema(operation_summary="Get Course List",operation_description="Retrieve a list of all courses",responses={200: CourseSerializer(many=True), 401: "Unauthorized"})
-#     def get(self, request):
-#         user_level = request.user.level  # 1 or 2
-#         courses = Course.objects.filter(is_delete=False).order_by("-created_at")
-#         # serializer = CourseSerializer(courses, many=True)
-#         serializer = CourseSerializer(
-#             courses,
-#             many=True,
-#             context={"request": request}
-#         )
-#         return Response({"message": "Courses fetched","data": serializer.data})
-    
-
 class CourseListAPI(APIView):
     permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_summary="Get Course List",
-        operation_description="Retrieve all courses with completion status",
-        responses={200: CourseSerializer(many=True), 401: "Unauthorized"}
-    )
+    @swagger_auto_schema(operation_summary="Get Course List",operation_description="Retrieve all courses with completion status",responses={200: CourseSerializer(many=True), 401: "Unauthorized"})
     def get(self, request):
-        courses = Course.objects.filter(
-            is_delete=False
-        ).order_by("-created_at")
-
-        serializer = CourseSerializer(
-            courses,
-            many=True,
-            context={"request": request}
-        )
-
-        return Response({
-            "message": "Courses fetched",
-            "data": serializer.data
-        })
+        courses = Course.objects.filter(is_delete=False).order_by("-created_at")
+        serializer = CourseSerializer(courses,many=True,context={"request": request})
+        return Response({"message": "Courses fetched","data": serializer.data})
 class CourseDetailAPI(APIView):
     permission_classes = [IsAuthenticated]
     @swagger_auto_schema(operation_summary="Get Course Detail",operation_description="Retrieve a specific course by ID",responses={200: CourseSerializer, 401: "Unauthorized"})
@@ -386,34 +335,123 @@ class UserResultSummaryAPI(APIView):
 from django.db.models import Count, Q
 
 
+# class UserCourseResultAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = request.user
+
+#         results = (
+#             UserAnswer.objects
+#             .filter(user=user)
+#             .values(
+#                 "question__topic__course__c_id",
+#                 "question__topic__course__title"
+#             )
+#             .annotate(
+#                 total=Count("answer_id"),
+#                 correct=Count("answer_id", filter=Q(is_correct=True))
+#             )
+#         )
+
+#         response = []
+#         for r in results:
+#             percentage = round((r["correct"] / r["total"]) * 100, 2)
+#             response.append({
+#                 "course_id": r["question__topic__course__c_id"],
+#                 "course_title": r["question__topic__course__title"],
+#                 "total_questions": r["total"],
+#                 "correct_answers": r["correct"],
+#                 "percentage": percentage
+#             })
+
+#         return Response(response)
+
+
+
+
+# class UserCourseResultAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = request.user
+
+#         # get user results grouped by chapter
+#         result_map = {
+#             r["question__topic__chapter_id"]: r
+#             for r in (
+#                 UserAnswer.objects
+#                 .filter(user=user)
+#                 .values("question__topic__course_id")
+#                 .annotate(
+#                     total = Count("answer_id"),
+#                     correct = Count("answer_id", filter=Q(is_correct=True))
+#                 )
+#             )
+#         }
+
+#         # fetch ALL chapters
+#         chapters = Course.objects.all()
+
+#         response = []
+
+#         for ch in chapters:
+#             data = result_map.get(ch.id)
+
+#             if data:
+#                 percentage = round((data["correct"] / data["total"]) * 100, 2)
+#             else:
+#                 percentage = 0
+
+#             response.append({
+#                 "chapter_id": ch.id,
+#                 "chapter_name": ch.title,
+#                 "percentage": percentage
+#             })
+
+#         return Response({"chapters": response})
+
+
 class UserCourseResultAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
 
+        # results grouped by COURSE
         results = (
             UserAnswer.objects
             .filter(user=user)
-            .values(
-                "question__topic__course__c_id",
-                "question__topic__course__title"
-            )
+            .values("question__topic__course_id")
             .annotate(
                 total=Count("answer_id"),
                 correct=Count("answer_id", filter=Q(is_correct=True))
             )
         )
 
+        # convert queryset → dictionary map
+        result_map = {
+            r["question__topic__course_id"]: r
+            for r in results
+        }
+
+        # fetch all courses
+        courses = Course.objects.all()
+
         response = []
-        for r in results:
-            percentage = round((r["correct"] / r["total"]) * 100, 2)
+
+        for course in courses:
+            data = result_map.get(course.c_id)  # use your PK field
+
+            if data and data["total"] > 0:
+                percentage = round((data["correct"] / data["total"]) * 100, 2)
+            else:
+                percentage = 0
+
             response.append({
-                "course_id": r["question__topic__course__c_id"],
-                "course_title": r["question__topic__course__title"],
-                "total_questions": r["total"],
-                "correct_answers": r["correct"],
+                "chapter_id": course.c_id,      # keeping your response format
+                "chapter_name": course.title,
                 "percentage": percentage
             })
 
-        return Response(response)
+        return Response({"chapters": response})
