@@ -112,6 +112,7 @@ class Questions(models.Model):
     option_c = models.CharField(max_length=255,blank=True, null=True)
     option_d = models.CharField(max_length=255,blank=True, null=True)
     file = models.FileField(upload_to='media/', blank=True, null=True)
+    ans_count=models.IntegerField(default=0)
     correct_option = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
