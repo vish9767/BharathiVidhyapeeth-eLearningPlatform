@@ -1,6 +1,7 @@
 from django.db import models
 from django_enumfield import enum
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.core.exceptions import ValidationError
 
 class UserLevel_enum(enum.Enum):
     Level_1 = 1
@@ -52,6 +53,7 @@ class Course(models.Model):
     c_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
+    file = models.FileField(upload_to='media/', blank=True, null=True)
     is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -76,14 +78,28 @@ class Media(models.Model):
     m_id = models.AutoField(primary_key=True)
     topic = models.ForeignKey('Topic', on_delete=models.CASCADE, related_name='media')
     media_type = models.CharField(max_length=20,choices=[('video', 'Video'),('image', 'Image'),('animation', 'Animation'),('document', 'Word File'),])
-    file = models.FileField(upload_to='media/')
+    file = models.FileField(upload_to='media/', blank=True, null=True)
+    video_url = models.URLField(blank=True, null=True)
     caption = models.CharField(max_length=255, blank=True)
     is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    def clean(self):
+            # If video type → require video_url, not file
+            if self.media_type == 'video':
+                if not self.video_url:
+                    raise ValidationError("Video URL is required for video type.")
+                if self.file:
+                    raise ValidationError("Do not upload file when media type is video.")
+            # If not video → require file, not video_url
+            else:
+                if not self.file:
+                    raise ValidationError("File is required for non-video media types.")
+                if self.video_url:
+                    raise ValidationError("Video URL should only be used for video type.")
     def __str__(self):
-        return self.topic.title + " - " + self.media_type
-    
+        return f"{self.topic.title} - {self.media_type}"
+        
 
 
 class Questions(models.Model):

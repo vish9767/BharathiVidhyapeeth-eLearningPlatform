@@ -131,7 +131,7 @@ class CourseSerializer(serializers.ModelSerializer):
     comp_status = serializers.SerializerMethodField()
     class Meta:
         model = Course
-        fields = ("c_id","title","description","created_at","comp_status")
+        fields = ("c_id","title","description","created_at","comp_status","file")
     def get_comp_status(self, course):
         user = self.context["request"].user
         try:
