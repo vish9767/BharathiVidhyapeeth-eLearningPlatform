@@ -105,12 +105,14 @@ class Media(models.Model):
 class Questions(models.Model):
     q_id = models.AutoField(primary_key=True)
     topic = models.ForeignKey('Topic', on_delete=models.CASCADE, related_name='questions')
+    que_type=models.CharField(max_length=20,choices=[('mcq', 'Mcq'),('pair', 'Pair'),('imgage', 'Image')])
     question_text = models.TextField()
-    option_a = models.CharField(max_length=255)
-    option_b = models.CharField(max_length=255)
-    option_c = models.CharField(max_length=255)
-    option_d = models.CharField(max_length=255)
-    correct_option = models.CharField(max_length=1, choices=[('A', 'Option A'), ('B', 'Option B'), ('C', 'Option C'), ('D', 'Option D')])
+    option_a = models.CharField(max_length=255,blank=True, null=True)
+    option_b = models.CharField(max_length=255,blank=True, null=True)
+    option_c = models.CharField(max_length=255,blank=True, null=True)
+    option_d = models.CharField(max_length=255,blank=True, null=True)
+    file = models.FileField(upload_to='media/', blank=True, null=True)
+    correct_option = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -122,7 +124,7 @@ class UserAnswer(models.Model):
     answer_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('elearning.User',on_delete=models.CASCADE,related_name='answers')
     question = models.ForeignKey('Questions',on_delete=models.CASCADE,related_name='user_answers')
-    selected_option = models.CharField(max_length=1,choices=[('A', 'Option A'), ('B', 'Option B'), ('C', 'Option C'), ('D', 'Option D')])
+    selected_option = models.CharField(max_length=500)
     is_correct = models.BooleanField(default=False)
     answered_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):

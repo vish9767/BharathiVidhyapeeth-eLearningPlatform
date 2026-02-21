@@ -181,7 +181,7 @@ class TopicSerializer(serializers.ModelSerializer):
 class QuestionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions
-        fields = ['q_id','topic','question_text','option_a','option_b','option_c','option_d']
+        fields = ['q_id','topic','que_type','file','question_text','option_a','option_b','option_c','option_d']
 
 
 
