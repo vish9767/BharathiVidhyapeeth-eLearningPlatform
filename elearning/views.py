@@ -261,11 +261,17 @@ class CourseTopicsAPIView(APIView):
             return Response({"detail": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
         topics = Topic.objects.filter(course=course, is_delete=False).prefetch_related('media')
         serializer = TopicSerializer(topics, many=True, context={'request': request})
-        questions = Questions.objects.filter(topic__course=course)
-        questions_serializer = QuestionsSerializer(questions, many=True)
-        return Response({"course_id": course.c_id,"course_title": course.title,"topics": serializer.data,
-            "questions": questions_serializer.data,}, status=status.HTTP_200_OK)
+        return Response({"course_id": course.c_id,"course_title": course.title,"topics": serializer.data,}, status=status.HTTP_200_OK)
 
+
+class TopicsQuestionsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        topic_id = request.data.get('t_id')
+        # questions = Questions.objects.filter(topic__course=course)
+        questions = Questions.objects.filter(topic=topic_id)
+        questions_serializer = QuestionsSerializer(questions, many=True)
+        return Response({"questions": questions_serializer.data,}, status=status.HTTP_200_OK)
 
 class SubmitTestAPI(APIView):
     authentication_classes = [JWTAuthentication]
