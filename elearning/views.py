@@ -335,39 +335,6 @@ class UserResultSummaryAPI(APIView):
 from django.db.models import Count, Q
 
 
-# class UserCourseResultAPI(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         user = request.user
-
-#         results = (
-#             UserAnswer.objects
-#             .filter(user=user)
-#             .values(
-#                 "question__topic__course__c_id",
-#                 "question__topic__course__title"
-#             )
-#             .annotate(
-#                 total=Count("answer_id"),
-#                 correct=Count("answer_id", filter=Q(is_correct=True))
-#             )
-#         )
-
-#         response = []
-#         for r in results:
-#             percentage = round((r["correct"] / r["total"]) * 100, 2)
-#             response.append({
-#                 "course_id": r["question__topic__course__c_id"],
-#                 "course_title": r["question__topic__course__title"],
-#                 "total_questions": r["total"],
-#                 "correct_answers": r["correct"],
-#                 "percentage": percentage
-#             })
-
-#         return Response(response)
-
-
 
 
 # class UserCourseResultAPI(APIView):
@@ -455,6 +422,7 @@ from django.db.models import Count, Q
 
 #         return Response({"chapters": response})
     
+from django.db.models import Count, Q, Min
 
 
 class UserCourseResultAPI(APIView):
@@ -462,45 +430,46 @@ class UserCourseResultAPI(APIView):
 
     def get(self, request):
         user = request.user
-        topic_id = request.data.get("topic_id")
 
-        if not topic_id:
-            return Response(
-                {"error": "topic_id required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # ✅ filter by topic_id
-        result = (
+        # results grouped by COURSE
+        results = (
             UserAnswer.objects
-            .filter(user=user, question__topic_id=topic_id)
-            .aggregate(
+            .filter(user=user)
+            .values("question__topic__course_id")
+            .annotate(
                 total=Count("answer_id"),
                 correct=Count("answer_id", filter=Q(is_correct=True))
             )
         )
 
-        if result["total"] > 0:
-            percentage = round((result["correct"] / result["total"]) * 100, 2)
-        else:
-            percentage = 0
+        # map course_id → result data
+        result_map = {r["question__topic__course_id"]: r for r in results}
 
-        # get topic name
-        try:
-            topic = Topic.objects.get(t_id=topic_id)
-        except Topic.DoesNotExist:
-            return Response(
-                {"error": "Invalid topic_id"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        # fetch all courses
+        courses = Course.objects.all()
 
-        return Response({
-            "topic_id": topic.t_id,
-            "topic_name": topic.title,
-            "total_questions": result["total"],
-            "correct_answers": result["correct"],
-            "percentage": percentage
-        })
+        # fetch first topic per course
+        first_topics = (
+            Topic.objects
+            .values("course_id")
+            .annotate(first_topic_id=Min("t_id"))
+        )
+        first_topic_map = {t["course_id"]: t["first_topic_id"] for t in first_topics}
+
+        response = []
+
+        for course in courses:
+            data = result_map.get(course.c_id)
+            percentage = round((data["correct"] / data["total"]) * 100, 2) if data and data["total"] > 0 else 0
+
+            response.append({
+                "chapter_id": course.c_id,
+                "chapter_name": course.title,
+                "topic_id": first_topic_map.get(course.c_id),
+                "percentage": percentage
+            })
+
+        return Response({"chapters": response})
 
 
 class ChapterTestDetailedResultAPI(APIView):
