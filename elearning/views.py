@@ -51,7 +51,7 @@ class LoginAPI(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
         tokens = generate_jwt(user)
-        return Response({"message": "Login successful","user_id": user.u_id,**tokens}, status=status.HTTP_200_OK)
+        return Response({"message": "Login successful","user_id": user.u_id,**tokens,"is_staff": user.is_staff}, status=status.HTTP_200_OK)
     
 
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -412,52 +412,95 @@ from django.db.models import Count, Q
 #         return Response({"chapters": response})
 
 
+# class UserCourseResultAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = request.user
+
+#         # results grouped by COURSE
+#         results = (
+#             UserAnswer.objects
+#             .filter(user=user)
+#             .values("question__topic__course_id")
+#             .annotate(
+#                 total=Count("answer_id"),
+#                 correct=Count("answer_id", filter=Q(is_correct=True))
+#             )
+#         )
+
+#         # convert queryset → dictionary map
+#         result_map = {
+#             r["question__topic__course_id"]: r
+#             for r in results
+#         }
+
+#         # fetch all courses
+#         courses = Course.objects.all()
+
+#         response = []
+
+#         for course in courses:
+#             data = result_map.get(course.c_id)  # use your PK field
+
+#             if data and data["total"] > 0:
+#                 percentage = round((data["correct"] / data["total"]) * 100, 2)
+#             else:
+#                 percentage = 0
+
+#             response.append({
+#                 "chapter_id": course.c_id,      # keeping your response format
+#                 "chapter_name": course.title,
+#                 "percentage": percentage})
+
+#         return Response({"chapters": response})
+    
+
+
 class UserCourseResultAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        topic_id = request.data.get("topic_id")
 
-        # results grouped by COURSE
-        results = (
+        if not topic_id:
+            return Response(
+                {"error": "topic_id required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ✅ filter by topic_id
+        result = (
             UserAnswer.objects
-            .filter(user=user)
-            .values("question__topic__course_id")
-            .annotate(
+            .filter(user=user, question__topic_id=topic_id)
+            .aggregate(
                 total=Count("answer_id"),
                 correct=Count("answer_id", filter=Q(is_correct=True))
             )
         )
 
-        # convert queryset → dictionary map
-        result_map = {
-            r["question__topic__course_id"]: r
-            for r in results
-        }
+        if result["total"] > 0:
+            percentage = round((result["correct"] / result["total"]) * 100, 2)
+        else:
+            percentage = 0
 
-        # fetch all courses
-        courses = Course.objects.all()
+        # get topic name
+        try:
+            topic = Topic.objects.get(t_id=topic_id)
+        except Topic.DoesNotExist:
+            return Response(
+                {"error": "Invalid topic_id"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        response = []
-
-        for course in courses:
-            data = result_map.get(course.c_id)  # use your PK field
-
-            if data and data["total"] > 0:
-                percentage = round((data["correct"] / data["total"]) * 100, 2)
-            else:
-                percentage = 0
-
-            response.append({
-                "chapter_id": course.c_id,      # keeping your response format
-                "chapter_name": course.title,
-                "percentage": percentage
-            })
-
-        return Response({"chapters": response})
-    
-
-
+        return Response({
+            "topic_id": topic.t_id,
+            "topic_name": topic.title,
+            "total_questions": result["total"],
+            "correct_answers": result["correct"],
+            "percentage": percentage
+        })
 
 
 class ChapterTestDetailedResultAPI(APIView):

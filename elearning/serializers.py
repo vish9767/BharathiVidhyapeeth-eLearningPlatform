@@ -14,10 +14,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
+            otp = generate_otp()
             with transaction.atomic():
                 validated_data['password'] = hash_password(validated_data['password'])
+                validated_data['otp'] = otp
+                validated_data['otp_created_at'] = timezone.now()
                 user = User.objects.create(**validated_data)
                 return user
+            # send OTP via email (example)
+            send_mail(subject='OTP Verification',message=f'Your OTP is {otp}. It will expire in 10 minutes.',from_email='noreply@example.com',recipient_list=[user.email],)
+            raise serializers.ValidationError("verify Otp")
         except Exception:
             raise serializers.ValidationError("Registration failed. Please try again.")
         # validated_data['password'] = hash_password(validated_data['password'])
@@ -36,7 +42,8 @@ class LoginSerializer(serializers.Serializer):
 
         if not verify_password(data['password'], user.password):
             raise serializers.ValidationError("Invalid credentials")
-
+        if not user.otp_verification:
+            raise serializers.ValidationError("OTP not verified. Please verify OTP before login.")
         return user
 
 
@@ -66,11 +73,7 @@ class ForgotPasswordSerializer(serializers.Serializer):
         user.save()
         print(f"OTP for {email} is {otp}")
         # send OTP via email (example)
-        send_mail(
-            subject='Your OTP for Password Reset',
-            message=f'Your OTP is {otp}. It will expire in 10 minutes.',
-            from_email='noreply@example.com',
-            recipient_list=[email],)
+        send_mail(subject='Your OTP for Password Reset',message=f'Your OTP is {otp}. It will expire in 10 minutes.',from_email='noreply@example.com',recipient_list=[email],)
         return user
 
 
@@ -135,16 +138,10 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_comp_status(self, course):
         user = self.context["request"].user
         try:
-            progress = UserCourseProgress.objects.get(
-                user=user,
-                course=course
-            )
+            progress = UserCourseProgress.objects.get(user=user,course=course)
         except UserCourseProgress.DoesNotExist:
             return False
-        total_topics = Topic.objects.filter(
-            course=course,
-            is_delete=False
-        ).count()
+        total_topics = Topic.objects.filter(course=course,is_delete=False).count()
         completed_topics = progress.completed_topics.count()
         if total_topics == 0:
             return False
