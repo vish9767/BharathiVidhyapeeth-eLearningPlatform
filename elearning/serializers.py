@@ -14,16 +14,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            otp = generate_otp()
+            # otp = generate_otp()
             with transaction.atomic():
                 validated_data['password'] = hash_password(validated_data['password'])
-                validated_data['otp'] = otp
-                validated_data['otp_created_at'] = timezone.now()
+                # validated_data['otp'] = otp
+                # validated_data['otp_created_at'] = timezone.now()
                 user = User.objects.create(**validated_data)
                 return user
             # send OTP via email (example)
-            send_mail(subject='OTP Verification',message=f'Your OTP is {otp}. It will expire in 10 minutes.',from_email='noreply@example.com',recipient_list=[user.email],)
-            raise serializers.ValidationError("verify Otp")
+            # send_mail(subject='OTP Verification',message=f'Your OTP is {otp}. It will expire in 10 minutes.',from_email='noreply@example.com',recipient_list=[user.email],)
+            # raise serializers.ValidationError("verify Otp")
         except Exception:
             raise serializers.ValidationError("Registration failed. Please try again.")
         # validated_data['password'] = hash_password(validated_data['password'])
@@ -42,8 +42,8 @@ class LoginSerializer(serializers.Serializer):
 
         if not verify_password(data['password'], user.password):
             raise serializers.ValidationError("Invalid credentials")
-        if not user.otp_verification:
-            raise serializers.ValidationError("OTP not verified. Please verify OTP before login.")
+        # if not user.otp_verification:
+        #     raise serializers.ValidationError("OTP not verified. Please verify OTP before login.")
         return user
 
 
