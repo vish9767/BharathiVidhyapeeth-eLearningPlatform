@@ -455,3 +455,51 @@ class UserCourseResultAPI(APIView):
             })
 
         return Response({"chapters": response})
+    
+
+
+
+
+class ChapterTestDetailedResultAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        chapter_id =request.data.get('chapter_id')
+
+        if not chapter_id:
+            return Response(
+                {"error": "chapter_id required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            chapter = Course.objects.get(c_id=chapter_id)
+        except Course.DoesNotExist:
+            return Response(
+                {"error": "Invalid chapter_id"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        answers = (
+            UserAnswer.objects
+            .filter(user=user, question__topic__course_id=chapter_id)
+            .select_related("question", "question__topic")
+        )
+
+        tests = []
+
+        for ans in answers:
+            tests.append({
+                "topic_id": ans.question.topic.t_id,
+                "question": ans.question.question_text,
+                "user_answer": ans.selected_option,
+                "correct_answer": ans.question.correct_option,
+                "status": "Correct" if ans.is_correct else "Wrong"
+            })
+
+        return Response({
+            "chapter_id": chapter.c_id,
+            "chapter_name": chapter.title,
+            "tests": tests
+        })

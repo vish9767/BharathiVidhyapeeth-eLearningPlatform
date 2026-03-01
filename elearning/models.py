@@ -84,19 +84,19 @@ class Media(models.Model):
     is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    def clean(self):
-            # If video type → require video_url, not file
-            if self.media_type == 'video':
-                if not self.video_url:
-                    raise ValidationError("Video URL is required for video type.")
-                if self.file:
-                    raise ValidationError("Do not upload file when media type is video.")
-            # If not video → require file, not video_url
-            else:
-                if not self.file:
-                    raise ValidationError("File is required for non-video media types.")
-                if self.video_url:
-                    raise ValidationError("Video URL should only be used for video type.")
+    # def clean(self):
+    #         # If video type → require video_url, not file
+    #         if self.media_type == 'video':
+    #             if not self.video_url:
+    #                 raise ValidationError("Video URL is required for video type.")
+    #             if self.file:
+    #                 raise ValidationError("Do not upload file when media type is video.")
+    #         # If not video → require file, not video_url
+    #         else:
+    #             if not self.file:
+    #                 raise ValidationError("File is required for non-video media types.")
+    #             if self.video_url:
+    #                 raise ValidationError("Video URL should only be used for video type.")
     def __str__(self):
         return f"{self.topic.title} - {self.media_type}"
         
