@@ -137,7 +137,7 @@ class CourseListAPI(APIView):
     permission_classes = [IsAuthenticated]
     @swagger_auto_schema(operation_summary="Get Course List",operation_description="Retrieve all courses with completion status",responses={200: CourseSerializer(many=True), 401: "Unauthorized"})
     def get(self, request):
-        courses = Course.objects.filter(is_delete=False).order_by("created_at")
+        courses = Course.objects.filter(is_delete=False)#.order_by("created_at")
         serializer = CourseSerializer(courses,many=True,context={"request": request})
         return Response({"message": "Courses fetched","data": serializer.data})
 

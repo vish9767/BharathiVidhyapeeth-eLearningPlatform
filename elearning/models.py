@@ -56,8 +56,11 @@ class Course(models.Model):
     description = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to='media/', blank=True, null=True)
     is_delete = models.BooleanField(default=False)
+    order_by = models.IntegerField(default=0)   # 👈 NEW FIELD
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['order_by']   # 👈 automatic ordering
     def __str__(self):
         return self.title
     
@@ -70,8 +73,12 @@ class Topic(models.Model):
     description = models.TextField(null=True, blank=True)
     title = models.CharField(max_length=255)
     is_delete = models.BooleanField(default=False)
+    order_by = models.IntegerField(default=0)   # 👈 NEW FIELD
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['order_by']   # 👈 automatic ordering
+
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
