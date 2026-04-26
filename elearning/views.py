@@ -351,16 +351,11 @@ class SubmitTestAPI(APIView):
                     user=user,
                     question=question,
                     defaults={
-                        "selected_option": ans.get('answer', ''),
-                        "is_correct": is_correct
-                    }
+                        "selected_option": ans.get('answer', ''),"is_correct": is_correct}
                 )
 
             # ✅ progress (safe)
-            progress, _ = UserCourseProgress.objects.get_or_create(
-                user=user,
-                course=course
-            )
+            progress, _ = UserCourseProgress.objects.get_or_create(user=user,course=course)
 
             # avoid duplicate add
             if not progress.completed_topics.filter(t_id=topic.t_id).exists():

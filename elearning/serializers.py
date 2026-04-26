@@ -150,6 +150,8 @@ class CourseSerializer(serializers.ModelSerializer):
         completed_topics = progress.completed_topics.count()
         if total_topics == 0:
             return False
+        if course.title.lower() == 'references':
+            return True
         return completed_topics == total_topics
 
 ########################################course Serializer#########################################
