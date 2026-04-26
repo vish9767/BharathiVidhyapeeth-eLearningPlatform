@@ -254,10 +254,63 @@ class TopicsQuestionsAPIView(APIView):
 #         return Response({"message": "Test submitted successfully","total_questions": total_questions,"correct_answers": correct_count,"wrong_answers": total_questions - correct_count,"score_percentage": score_percentage}, status=status.HTTP_201_CREATED)
     
 
+# class SubmitTestAPI(APIView):
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+#     def normalize(self, text):
+#         if not text:
+#             return ""
+#         return " ".join(text.strip().lower().split())
+
+#     def post(self, request):
+#         serializer = SubmitTestSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         user = request.user
+#         topic_id = int(serializer.validated_data['topic_id'])
+#         answers = serializer.validated_data['answers']   # ✅ FIXED
+#         # print("this is answer",answers)
+#         # validate course + topic
+#         try:
+#             topic = Topic.objects.get(t_id=topic_id)
+#             course=topic.course
+#         except (Course.DoesNotExist, Topic.DoesNotExist):
+#             return Response({"error": "Invalid course or topic"},status=status.HTTP_400_BAD_REQUEST)
+#         correct_count = 0
+#         with transaction.atomic():
+#             for ans in answers:
+#                 try:
+#                     question = Questions.objects.get(q_id=int(ans.get('q_id', 0)),topic=topic)
+#                 except Questions.DoesNotExist:
+#                     continue  # skip invalid question
+#                 user_answer = self.normalize(ans.get('answer', ''))
+#                 correct_answer = self.normalize(question.correct_option)
+#                 is_correct = user_answer == correct_answer
+#                 if is_correct:
+#                     correct_count += 1
+#                 UserAnswer.objects.create(user=user,question=question,selected_option = ans.get('answer', ''),is_correct=is_correct)
+#             # progress update
+#             progress, _ = UserCourseProgress.objects.get_or_create(user=user,course=course)
+#             progress.completed_topics.add(topic)
+
+#         total_questions = len(answers)
+#         score_percentage = (
+#             round((correct_count / total_questions) * 100, 2)
+#             if total_questions > 0 else 0
+#         )
+
+#         return Response({
+#             "message": "Test submitted successfully",
+#             "total_questions": total_questions,
+#             "correct_answers": correct_count,
+#             "wrong_answers": total_questions - correct_count,
+#             "score_percentage": score_percentage
+#         }, status=status.HTTP_201_CREATED)
+
+
 class SubmitTestAPI(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
     def normalize(self, text):
         if not text:
             return ""
@@ -266,34 +319,55 @@ class SubmitTestAPI(APIView):
     def post(self, request):
         serializer = SubmitTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         user = request.user
         topic_id = int(serializer.validated_data['topic_id'])
-        answers = serializer.validated_data['answers']   # ✅ FIXED
-        # print("this is answer",answers)
-        # validate course + topic
+        answers = serializer.validated_data['answers']
+
+        # ✅ validate topic
         try:
-            topic = Topic.objects.get(t_id=topic_id)
-            course=topic.course
-        except (Course.DoesNotExist, Topic.DoesNotExist):
-            return Response({"error": "Invalid course or topic"},status=status.HTTP_400_BAD_REQUEST)
+            topic = Topic.objects.get(t_id=topic_id, is_delete=False)
+            course = topic.course
+        except Topic.DoesNotExist:
+            return Response({"error": "Invalid topic"},status=status.HTTP_400_BAD_REQUEST)
         correct_count = 0
         with transaction.atomic():
             for ans in answers:
+                q_id = int(ans.get('q_id', 0))
                 try:
-                    question = Questions.objects.get(q_id=int(ans.get('q_id', 0)),topic=topic)
+                    question = Questions.objects.get(q_id=q_id,topic=topic)
                 except Questions.DoesNotExist:
-                    continue  # skip invalid question
+                    continue
+
                 user_answer = self.normalize(ans.get('answer', ''))
                 correct_answer = self.normalize(question.correct_option)
                 is_correct = user_answer == correct_answer
+
                 if is_correct:
                     correct_count += 1
-                UserAnswer.objects.create(user=user,question=question,selected_option = ans.get('answer', ''),is_correct=is_correct)
-            # progress update
-            progress, _ = UserCourseProgress.objects.get_or_create(user=user,course=course)
-            progress.completed_topics.add(topic)
+
+                # ✅ avoid duplicate answers (important)
+                UserAnswer.objects.update_or_create(
+                    user=user,
+                    question=question,
+                    defaults={
+                        "selected_option": ans.get('answer', ''),
+                        "is_correct": is_correct
+                    }
+                )
+
+            # ✅ progress (safe)
+            progress, _ = UserCourseProgress.objects.get_or_create(
+                user=user,
+                course=course
+            )
+
+            # avoid duplicate add
+            if not progress.completed_topics.filter(t_id=topic.t_id).exists():
+                progress.completed_topics.add(topic)
 
         total_questions = len(answers)
+
         score_percentage = (
             round((correct_count / total_questions) * 100, 2)
             if total_questions > 0 else 0
@@ -306,6 +380,8 @@ class SubmitTestAPI(APIView):
             "wrong_answers": total_questions - correct_count,
             "score_percentage": score_percentage
         }, status=status.HTTP_201_CREATED)
+
+
 
 # result api 
 

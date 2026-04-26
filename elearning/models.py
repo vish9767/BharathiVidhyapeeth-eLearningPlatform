@@ -144,6 +144,9 @@ class UserCourseProgress(models.Model):
     user = models.ForeignKey('elearning.User',on_delete=models.CASCADE,related_name='course_progress')
     course = models.ForeignKey('Course',on_delete=models.CASCADE,related_name='user_progress')
     completed_topics = models.ManyToManyField('Topic',blank=True)
+    is_active = models.BooleanField(default=True)
     last_accessed = models.DateTimeField(auto_now=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'course'],name='unique_user_course_progress')]
     def __str__(self):
         return f"{self.user.email} - {self.course.title}"

@@ -138,7 +138,7 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_comp_status(self, course):
         user = self.context["request"].user
         try:
-            progress = UserCourseProgress.objects.get(user=user,course=course)
+            progress = UserCourseProgress.objects.get(user=user,course=course,is_active=True)
         except UserCourseProgress.DoesNotExist:
             return False
         total_topics = Topic.objects.filter(course=course,is_delete=False).count()
