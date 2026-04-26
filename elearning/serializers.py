@@ -45,10 +45,10 @@ class LoginSerializer(serializers.Serializer):
         
         # if not user.otp_verification:
         #     raise serializers.ValidationError("OTP not verified. Please verify OTP before login.")
-        if user.is_login==True:
-            raise serializers.ValidationError("User is already logged in")
-        user.is_login = True
-        user.save()
+        # if user.is_login==True:
+        #     raise serializers.ValidationError("User is already logged in")
+        # user.is_login = True
+        # user.save()
         return user
 
 
@@ -142,6 +142,8 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = ("c_id","title","description","created_at","comp_status","file")
     def get_comp_status(self, course):
         user = self.context["request"].user
+        if course.title.lower() == 'references':
+            return True
         try:
             progress = UserCourseProgress.objects.get(user=user,course=course,is_active=True)
         except UserCourseProgress.DoesNotExist:
@@ -150,8 +152,6 @@ class CourseSerializer(serializers.ModelSerializer):
         completed_topics = progress.completed_topics.count()
         if total_topics == 0:
             return False
-        if course.title.lower() == 'references':
-            return True
         return completed_topics == total_topics
 
 ########################################course Serializer#########################################
