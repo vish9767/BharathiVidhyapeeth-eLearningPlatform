@@ -42,8 +42,13 @@ class LoginSerializer(serializers.Serializer):
 
         if not verify_password(data['password'], user.password):
             raise serializers.ValidationError("Invalid credentials")
+        
         # if not user.otp_verification:
         #     raise serializers.ValidationError("OTP not verified. Please verify OTP before login.")
+        if user.is_login==True:
+            raise serializers.ValidationError("User is already logged in")
+        user.is_login = True
+        user.save()
         return user
 
 
